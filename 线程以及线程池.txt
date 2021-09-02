@@ -1,0 +1,69 @@
+一、线程的实现方式
+1.继承Thread，构造方法可以传Runnable
+2.实现Runnable 重写run方法
+3.实现Callable<T> 重写 call方法，有返回值抛异常，用futureTask（实现了Callable），多个线程一起做事，最后返回值汇总，
+futureTask.get()放在最后面汇总
+while（！futureTask.isDone）{},等着所有线程计算完才继续执行
+4.通过线程池获得线程
+
+二、线程池
+主要作用控制运行的线程的数量，处理过程中将任务放入队列，然后在线程创建后启动这些任务，如果线程数量超过了最大数据，超出数量的线程排队等候，等其他线程执行完，再从队列里取出来执行
+主要特点：线程复用：控制最大并发数；管理线程
+
+第一：降低资源消耗。通过重复利用已创建的线程降低线程创建和销毁造成的消耗
+第二：提高响应速度。当任务到达时，任务可以不需要等待线程创建就能立即执行。
+第三。提高线程的可关联性。线程是稀缺资源，如果无限制的创建，不仅会消耗系统资源，还会降低系统的稳定性，使用线程池可以进行统一的分配，调优和监控
+
+线程池三个常用的创建方式：
+
+Executors.newFixed（费k丝的）ThreadPool(int) 固定数线程池吗,一池int个处理线程 （执行长期的任务，性能好很多）
+主要特点：创建一个定长线程，可控制线程的最大并发数，超出的线程会在队列中等待。newFixedThreadPool创建的线程池，corePoolSize 和maximumPoolSize相等，它使用的事LinkedBlockingQueue
+
+Executors.newSingleThreadExecutor(),一池一线程 （一个任务一个任务执行的场景）
+
+Executors.newCachedThreadPool(),一池N线程（根据具体的任务处理速度来创建线程，线程数不固定），适用：执行很多短期异步的小程序或者负载较轻的服务器
+它使用的是 SynchronousQueue
+主要特点：创建一个可缓存线程池，如果线程池长度超过处理需要，可灵活回收空闲线程，若无可回收，则新建线程。
+SynchronousQueue，也就是说来了任务就创建线程运行，当线程空闲超过60秒，就销毁线程
+
+
+三、线程池的7大参数
+1.corePoolSize：线程池中常驻的核心线程数
+2.maximumPoolSize：线程池能够容纳的最大线程数，此值必须大于等于1
+3.workQueue：阻塞队列
+4.keepLiveTime：多余的空闲线程的存活时间。当前线程池数量超过corePoolSize时，当空闲时间达到KeepAliveTime时，多余线程会被销毁直到只剩corePoolSize个线程为止
+5.unit：keepLiveTime的单位（秒，毫秒）
+6.threadFactory：表示生成线程池中的工作线程的线程工程，用于创建线程-一般用默认的即可
+7.handler：拒绝策略，表示当队列满了，并且线程数量大于maximumPoolSize
+
+四：线程池的拒绝策略（JDK内置的）
+阻塞线程满了，线程数也满了，这个时候要拒绝策略来处理任务
+1.AbortPolicy（默认）：直接抛出RejectedExecutionException异常阻塞系统的正常运行
+2.CallerRunsPolicy：“调用者运行”一种调节机制，该策略既不会抛弃任务，也不会抛出异常，而是将某些任务回退到调用者
+3.DiscardOldestPolicy：抛弃队列中等待最久的任务，然后把当前任务加入队列中尝试再次提交当前任务。
+4.DiscardPolicy：直接丢弃任务，不予任何处理也不抛出异常，如果运行任务丢失，这是最好的一个钟方案
+
+以上4种都是实现了RejectedExecutionHandler接口
+
+一般生产上都不用Java提供的这些线程池，因为他们用的阻塞队列用的是Interger.MaxValue(),21亿多，当并发量大的时候，一直往阻塞队列里加任务，会导致OOM
+一般都是自己手写一个线程池，根据业务需求配置阻塞队列的大小
+
+五：合理配置线程池你是如何考虑的？
+首先看服务器的硬件配置，再来考虑
+
+CPU密集型：
+
+需要大量的运算，没有阻塞，CPU一直全速运行，CPU密集任务只有在真正的多核CPU上才能得到加速（通过多线程）
+一般公式：CPU核数加1个 =配置线程数
+
+IO密集型：
+
+IO密集型，即该任务需要大量的IO，即大量的阻塞
+
+1.IO密集型的任务线程并不是一直在执行任务，则应配置尽可能多的线程，如CPU核数*2
+2.IO密集型时，大部分线程都阻塞，故需要多配置线程数：
+参考公式：CPU核数/（1-阻塞系数 ）   阻塞系数在0.8-0.9之间
+比如八核CPU：8/（1-0.9） = 80个线程数
+
+获取CPU核数代码：System.out.println(Runtime.getRuntime().availableProcessors());
+

@@ -1,0 +1,8 @@
+一、arrayList，Set，map 线程安全吗，请举一个列子
+ 不安全，因为add/put没有加同步或者锁，多线程情况下，会导致 java.util.ConcurrentModificationException (并发修改异常) ，三种方式可以解决
+ java.util.ConcurrentModificationException：并发争抢修改导致，一个线程正在写，别的线程来抢夺，导致数据不一致。
+1.用 Vector (里面方法加了同步，只有list可以用这个解决问题);
+2.用Collections下的 同步集合，Collections.synchroinzedList {list,map,set都支持加同步}
+3.用JUC下提供的CopyOnwriteAarryList类  CopyOnwriteAarryList类，ConcurrentHashMap（写时复制，读写分离的思想（读和写在不同的容器）），add时会加锁，然后copy一个新的list，更改新的list，然后用新的list引用，关闭锁
+
+二、HashSet底层结构 ：就是HashMap（初始值16，负载因子0.75），add的值就是map.put 的时候的key，值是object类型的一个常量

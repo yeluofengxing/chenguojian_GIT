@@ -1,0 +1,32 @@
+一、请问++i 和i++，哪个是线程安全的？
+      分两种情况：
+      1.如果i是局部变量，那么线程是安全。局部变量不存在并发问题，所以是安全的
+      2.如果是全局变量，那么线程不安全。全局变量，同一个进程中不同的线程都能访问到
+
+结论：多线程环境下尽量不要用++i；和i++，容易埋雷 ，用AtomicInteger
+二、手写一个计数器，开10个线程，保证最后计数输出为10。
+   static  int count = 1;
+    @Test
+    public  void test2() {
+        for (int i = 0; i < 10; i++) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    count();
+                }
+            }).start();
+
+        }
+    }
+    private static synchronized void count() {
+        System.out.println(count++);
+    }
+
+副引：同步锁又分为 对象锁和全局锁，对象锁只能锁住一个对象，全局锁可以锁住多个对象（只要将同步方法改为静态的就可以实行），对象锁：当多个对象的时候会出现多个线程一起吃的情况
+java锁机制 加同步虽然能解决该问题，保证最后输出为10，但是当数据量大的时候会影响性能，同步会将除当前线程之外的线程排队，一个一个执行，不能中断，这种情况对于大量的竞争线程会导致性能的下降，这个情况下可以考虑使用原子类，JUC里提供了线程安全的原子类
+
+三、Hashmap 是线程安全的吗？ 如果需要实现线程安全的Hashmap，有哪些方法？
+ 
+不安全，想ArrayList，HashSet，hashMap都是不安全的，我看过他们的源码，像add，put，这些方法都是没有加同步的，所以是线程不安全的
+这些集合像实现线程安全的话，可以使用Collecitions提供的 同步方法，像synchroinzedList，sychrionzedSet，sychionzedMap，或者使用JUC包下提供的copyONWriteArraylist，copyOnWriteSet,map的话使用Concurrent（看卡瑞特）HashMap
+

@@ -1,0 +1,32 @@
+CountDownLatch
+作用：让一些线程阻塞直到宁一些线程完成一系列操作之后才会唤醒
+
+倒计时计数，就比如公司有5个人，保洁阿姨必须等5个人都离开公司，才锁门
+实际应用：某些业务需要一些操作前提才能继续操作
+
+例子：
+public class CountDownLatchDemo {
+    private static CountDownLatch count = new CountDownLatch(5);
+
+    public static void main(String[] args) {
+        for (int i=1;i<6;i++){
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    count.countDown();
+                    System.out.println(Thread.currentThread().getName()+"下班了，走人");
+                }
+            },String.valueOf(i)).start();
+        }
+        try {
+            count.await(); // 计数器等于0才继续往下走
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("人都走位了，保洁阿姨关门");
+
+    }
+}
+
+CylicBarrier（赛可拜丽儿）：加法版的CountDownLatch，列子：集齐7个龙珠后才能召唤神龙
+Semaphore（see my 佛）：信号量主要用于两个目的，一个是用于多个共享资源的互斥使用，另一个用于先发线程数量的控制，实际案例，抢车位(固定的车位，不固定的车进来抢，满了之后，走一台车，进一台车)，秒杀也类似
